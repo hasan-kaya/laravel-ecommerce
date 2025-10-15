@@ -1,22 +1,10 @@
 "A datetime string with format `Y-m-d H:i:s`, e.g. `2018-05-23 13:43:32`."
 scalar DateTime @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\DateTime")
 
-"Indicates what fields are available at the top level of a query operation."
+"Queries"
 type Query {
-    "Find a single user by an identifying attribute."
-    user(
-      "Search by primary key."
-      id: ID @eq @rules(apply: ["prohibits:email", "required_without:email"])
-
-      "Search by email address."
-      email: String @eq @rules(apply: ["prohibits:id", "required_without:id", "email"])
-    ): User @find
-
-    "List multiple users."
-    users(
-      "Filters by name. Accepts SQL LIKE wildcards `%` and `_`."
-      name: String @where(operator: "like")
-    ): [User!]! @paginate(defaultCount: 10)
+    "Get the authenticated user's profile"
+    me: User! @field(resolver: "App\\Presentation\\GraphQL\\Queries\\MeQuery") @guard
 }
 
 "Account of a person who uses this application."
@@ -40,13 +28,16 @@ type User {
     updated_at: DateTime!
 }
 
-"Authentication mutations"
+"Mutations"
 type Mutation {
     "Login a user and return an access token"
     login(input: LoginInput!): AuthPayload! @field(resolver: "App\\Presentation\\GraphQL\\Mutations\\LoginMutation")
 
     "Register a new user and return an access token"
     register(input: RegisterInput!): AuthPayload! @field(resolver: "App\\Presentation\\GraphQL\\Mutations\\RegisterMutation")
+
+    "Update the authenticated user's profile"
+    updateProfile(input: UpdateProfileInput!): UpdateProfilePayload! @field(resolver: "App\\Presentation\\GraphQL\\Mutations\\UpdateProfileMutation") @guard
 }
 
 "Input for login mutation"
@@ -83,4 +74,22 @@ type AuthPayload {
 
     "Authenticated user"
     user: User!
+}
+
+"Input for updating profile"
+input UpdateProfileInput {
+    "Full name"
+    name: String! @rules(apply: ["required", "string", "max:255"])
+
+    "Email address"
+    email: String! @rules(apply: ["required", "email"])
+}
+
+"Update profile response payload"
+type UpdateProfilePayload {
+    "Updated user"
+    user: User!
+
+    "Success message"
+    message: String!
 }

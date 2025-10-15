@@ -14,7 +14,7 @@ setup:
 	docker-compose exec app php artisan migrate
 
 	@echo "Laravel passport install ediliyor."
-	docker-compose exec app php artisan passport:install --no-interaction
+	docker-compose exec app php artisan passport:client --personal
 
 	@echo "Laravel setup tamamlandı. http://localhost:8080"
 

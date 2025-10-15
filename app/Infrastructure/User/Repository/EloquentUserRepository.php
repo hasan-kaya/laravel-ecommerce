@@ -12,6 +12,13 @@ use Illuminate\Support\Facades\Hash;
 
 final readonly class EloquentUserRepository implements UserRepositoryInterface
 {
+    public function findById(int $id): ?DomainUser
+    {
+        $user = EloquentUser::find($id);
+
+        return $user ? $this->toDomain($user) : null;
+    }
+
     public function findByEmail(string $email): ?DomainUser
     {
         $user = EloquentUser::where('email', $email)->first();
@@ -39,6 +46,18 @@ final readonly class EloquentUserRepository implements UserRepositoryInterface
         ]);
 
         return $this->toDomain($eloquentUser);
+    }
+
+    public function updateProfile(int $userId, string $name, string $email): DomainUser
+    {
+        $eloquentUser = EloquentUser::findOrFail($userId);
+        
+        $eloquentUser->update([
+            'name' => $name,
+            'email' => $email,
+        ]);
+
+        return $this->toDomain($eloquentUser->fresh());
     }
 
     public function emailExists(string $email): bool
