@@ -44,13 +44,7 @@ final readonly class UpdateProfileUseCase
         );
 
         return new UpdateProfileResponse(
-            user: new UserData(
-                id: $updatedUser->id,
-                name: $updatedUser->name,
-                email: $updatedUser->email,
-                createdAt: $updatedUser->createdAt?->format('Y-m-d H:i:s') ?? '',
-                updatedAt: $updatedUser->updatedAt?->format('Y-m-d H:i:s') ?? '',
-            ),
+            user: UserData::fromDomain($updatedUser),
             message: 'Profile updated successfully.',
         );
     }

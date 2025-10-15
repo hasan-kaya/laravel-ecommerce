@@ -7,6 +7,7 @@ namespace App\Presentation\GraphQL\Mutations;
 use App\Application\User\Register\RegisterCommand;
 use App\Application\User\Register\RegisterUseCase;
 use App\Domain\Shared\Exceptions\DomainException;
+use App\Presentation\GraphQL\Mappers\AuthResponseMapper;
 use GraphQL\Error\Error;
 
 final readonly class RegisterMutation
@@ -31,22 +32,11 @@ final readonly class RegisterMutation
 
             $response = $this->registerUseCase->execute($command);
 
-            return [
-                'access_token' => $response->accessToken,
-                'token_type' => $response->tokenType,
-                'expires_in' => $response->expiresIn,
-                'user' => [
-                    'id' => $response->user->id,
-                    'name' => $response->user->name,
-                    'email' => $response->user->email,
-                    'created_at' => $response->user->createdAt,
-                    'updated_at' => $response->user->updatedAt,
-                ],
-            ];
+            return AuthResponseMapper::toArray($response);
         } catch (DomainException $e) {
             throw new Error($e->getMessage());
         } catch (\Throwable $e) {
-            throw new Error('Registration failed');
+            throw new Error('An unknown error occurred');
         }
     }
 }

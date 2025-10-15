@@ -39,13 +39,7 @@ final readonly class LoginUseCase
             accessToken: $accessToken->token,
             tokenType: $accessToken->type,
             expiresIn: $accessToken->expiresIn,
-            user: new UserData(
-                id: $user->id,
-                name: $user->name,
-                email: $user->email,
-                createdAt: $user->createdAt?->format('Y-m-d H:i:s') ?? '',
-                updatedAt: $user->updatedAt?->format('Y-m-d H:i:s') ?? '',
-            ),
+            user: UserData::fromDomain($user),
         );
     }
 }

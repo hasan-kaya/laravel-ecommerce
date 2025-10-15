@@ -5,6 +5,9 @@ scalar DateTime @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\Date
 type Query {
     "Get the authenticated user's profile"
     me: User! @field(resolver: "App\\Presentation\\GraphQL\\Queries\\MeQuery") @guard
+
+    "Get the authenticated user's addresses"
+    addresses: [Address!]! @field(resolver: "App\\Presentation\\GraphQL\\Queries\\AddressesQuery") @guard
 }
 
 "Account of a person who uses this application."
@@ -38,6 +41,18 @@ type Mutation {
 
     "Update the authenticated user's profile"
     updateProfile(input: UpdateProfileInput!): UpdateProfilePayload! @field(resolver: "App\\Presentation\\GraphQL\\Mutations\\UpdateProfileMutation") @guard
+
+    "Create a new address"
+    createAddress(input: CreateAddressInput!): Address! @field(resolver: "App\\Presentation\\GraphQL\\Mutations\\CreateAddressMutation") @guard
+
+    "Update an existing address"
+    updateAddress(id: ID!, input: UpdateAddressInput!): Address! @field(resolver: "App\\Presentation\\GraphQL\\Mutations\\UpdateAddressMutation") @guard
+
+    "Delete an address"
+    deleteAddress(id: ID!): DeleteAddressPayload! @field(resolver: "App\\Presentation\\GraphQL\\Mutations\\DeleteAddressMutation") @guard
+
+    "Set an address as default"
+    setDefaultAddress(id: ID!): Address! @field(resolver: "App\\Presentation\\GraphQL\\Mutations\\SetDefaultAddressMutation") @guard
 }
 
 "Input for login mutation"
@@ -91,5 +106,113 @@ type UpdateProfilePayload {
     user: User!
 
     "Success message"
+    message: String!
+}
+
+"Address type"
+type Address {
+    "Unique primary key"
+    id: ID!
+
+    "Address label (Ev, İş, etc.)"
+    label: String!
+
+    "Full name"
+    full_name: String!
+
+    "Phone number"
+    phone: String!
+
+    "İl (City/Province)"
+    city: String!
+
+    "İlçe (District)"
+    district: String!
+
+    "Mahalle (Neighborhood)"
+    neighborhood: String!
+
+    "Full address"
+    address: String!
+
+    "Address type (shipping or billing)"
+    type: String!
+
+    "Is this the default address"
+    is_default: Boolean!
+
+    "When the address was created"
+    created_at: DateTime!
+
+    "When the address was last updated"
+    updated_at: DateTime!
+}
+
+"Input for creating address"
+input CreateAddressInput {
+    "Address label"
+    label: String! @rules(apply: ["required", "string", "max:50"])
+
+    "Full name"
+    full_name: String! @rules(apply: ["required", "string", "max:255"])
+
+    "Phone number"
+    phone: String! @rules(apply: ["required", "string", "max:20"])
+
+    "İl"
+    city: String! @rules(apply: ["required", "string", "max:100"])
+
+    "İlçe"
+    district: String! @rules(apply: ["required", "string", "max:100"])
+
+    "Mahalle"
+    neighborhood: String! @rules(apply: ["required", "string", "max:100"])
+
+    "Full address"
+    address: String! @rules(apply: ["required", "string"])
+
+    "Address type"
+    type: String! @rules(apply: ["required", "in:shipping,billing"])
+
+    "Set as default"
+    is_default: Boolean
+}
+
+"Input for updating address"
+input UpdateAddressInput {
+    "Address label"
+    label: String! @rules(apply: ["required", "string", "max:50"])
+
+    "Full name"
+    full_name: String! @rules(apply: ["required", "string", "max:255"])
+
+    "Phone number"
+    phone: String! @rules(apply: ["required", "string", "max:20"])
+
+    "İl"
+    city: String! @rules(apply: ["required", "string", "max:100"])
+
+    "İlçe"
+    district: String! @rules(apply: ["required", "string", "max:100"])
+
+    "Mahalle"
+    neighborhood: String! @rules(apply: ["required", "string", "max:100"])
+
+    "Full address"
+    address: String! @rules(apply: ["required", "string"])
+
+    "Address type"
+    type: String! @rules(apply: ["required", "in:shipping,billing"])
+
+    "Set as default"
+    is_default: Boolean
+}
+
+"Delete address response"
+type DeleteAddressPayload {
+    "Success status"
+    success: Boolean!
+
+    "Message"
     message: String!
 }
