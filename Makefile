@@ -14,3 +14,6 @@ setup:
 	docker-compose exec app php artisan migrate
 
 	@echo "Laravel setup tamamlandı. http://localhost:8080"
+
+migrate:
+	docker-compose exec app php artisan migrate
