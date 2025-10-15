@@ -1,6 +1,9 @@
 "A datetime string with format `Y-m-d H:i:s`, e.g. `2018-05-23 13:43:32`."
 scalar DateTime @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\DateTime")
 
+"Requires the user to be authenticated and have admin role."
+directive @admin on FIELD_DEFINITION
+
 "Queries"
 type Query {
     "Get the authenticated user's profile"
@@ -26,6 +29,9 @@ type User {
 
     "Unique email address."
     email: String!
+
+    "User role (user or admin)."
+    role: String!
 
     "When the email was verified."
     email_verified_at: DateTime
@@ -60,14 +66,14 @@ type Mutation {
     "Set an address as default"
     setDefaultAddress(id: ID!): Address! @field(resolver: "App\\Presentation\\GraphQL\\Mutations\\SetDefaultAddressMutation") @guard
 
-    "Create a new product"
-    createProduct(input: CreateProductInput!): Product! @field(resolver: "App\\Presentation\\GraphQL\\Mutations\\CreateProductMutation") @guard
+    "Create a new product (Admin only)"
+    createProduct(input: CreateProductInput!): Product! @field(resolver: "App\\Presentation\\GraphQL\\Mutations\\CreateProductMutation") @admin
 
-    "Update an existing product"
-    updateProduct(id: ID!, input: UpdateProductInput!): Product! @field(resolver: "App\\Presentation\\GraphQL\\Mutations\\UpdateProductMutation") @guard
+    "Update an existing product (Admin only)"
+    updateProduct(id: ID!, input: UpdateProductInput!): Product! @field(resolver: "App\\Presentation\\GraphQL\\Mutations\\UpdateProductMutation") @admin
 
-    "Delete a product"
-    deleteProduct(id: ID!): DeleteProductPayload! @field(resolver: "App\\Presentation\\GraphQL\\Mutations\\DeleteProductMutation") @guard
+    "Delete a product (Admin only)"
+    deleteProduct(id: ID!): DeleteProductPayload! @field(resolver: "App\\Presentation\\GraphQL\\Mutations\\DeleteProductMutation") @admin
 }
 
 "Input for login mutation"

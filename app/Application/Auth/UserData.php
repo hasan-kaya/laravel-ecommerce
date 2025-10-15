@@ -12,6 +12,7 @@ final readonly class UserData
         public int $id,
         public string $name,
         public string $email,
+        public string $role,
         public string $createdAt,
         public string $updatedAt,
     ) {
@@ -23,6 +24,7 @@ final readonly class UserData
             id: $user->id,
             name: $user->name,
             email: $user->email,
+            role: $user->role,
             createdAt: $user->createdAt?->format('Y-m-d H:i:s') ?? '',
             updatedAt: $user->updatedAt?->format('Y-m-d H:i:s') ?? '',
         );

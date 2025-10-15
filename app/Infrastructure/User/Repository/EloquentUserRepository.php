@@ -51,7 +51,7 @@ final readonly class EloquentUserRepository implements UserRepositoryInterface
     public function updateProfile(int $userId, string $name, string $email): DomainUser
     {
         $eloquentUser = EloquentUser::findOrFail($userId);
-        
+
         $eloquentUser->update([
             'name' => $name,
             'email' => $email,
@@ -71,6 +71,7 @@ final readonly class EloquentUserRepository implements UserRepositoryInterface
             id: $eloquentUser->id,
             name: $eloquentUser->name,
             email: $eloquentUser->email,
+            role: $eloquentUser->role ?? 'user',
             emailVerifiedAt: $eloquentUser->email_verified_at
                 ? DateTimeImmutable::createFromMutable($eloquentUser->email_verified_at)
                 : null,

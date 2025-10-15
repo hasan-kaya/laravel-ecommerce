@@ -27,6 +27,7 @@ final readonly class MeQuery
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'role' => $user->role ?? 'user',
                 'email_verified_at' => $user->email_verified_at?->format('Y-m-d H:i:s'),
                 'created_at' => $user->created_at?->format('Y-m-d H:i:s'),
                 'updated_at' => $user->updated_at?->format('Y-m-d H:i:s'),

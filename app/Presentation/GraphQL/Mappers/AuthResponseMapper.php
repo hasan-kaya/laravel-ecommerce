@@ -21,6 +21,7 @@ final class AuthResponseMapper
                 'id' => $response->user->id,
                 'name' => $response->user->name,
                 'email' => $response->user->email,
+                'role' => $response->user->role,
                 'created_at' => $response->user->createdAt,
                 'updated_at' => $response->user->updatedAt,
             ],

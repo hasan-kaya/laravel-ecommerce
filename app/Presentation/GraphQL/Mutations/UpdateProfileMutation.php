@@ -23,7 +23,6 @@ final readonly class UpdateProfileMutation
     public function __invoke($root, array $args, $context): array
     {
         try {
-            // Get authenticated user ID from context
             $userId = $context->user()->id;
 
             $command = new UpdateProfileCommand(
@@ -39,6 +38,7 @@ final readonly class UpdateProfileMutation
                     'id' => $response->user->id,
                     'name' => $response->user->name,
                     'email' => $response->user->email,
+                    'role' => $response->user->role,
                     'created_at' => $response->user->createdAt,
                     'updated_at' => $response->user->updatedAt,
                 ],

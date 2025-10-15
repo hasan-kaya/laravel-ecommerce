@@ -48,7 +48,7 @@ class ProductSeeder extends Seeder
             ]);
         }
 
-        $this->command->info(Product::count() . ' adet ürün başarıyla oluşturuldu.');
+        $this->command->info(Product::count() . ' products created successfully.');
     }
 
     private function generateProductName(string $category): string
