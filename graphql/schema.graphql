@@ -8,6 +8,12 @@ type Query {
 
     "Get the authenticated user's addresses"
     addresses: [Address!]! @field(resolver: "App\\Presentation\\GraphQL\\Queries\\AddressesQuery") @guard
+
+    "Get all products with optional filters"
+    products(filter: ProductFilterInput, limit: Int, offset: Int): [Product!]! @field(resolver: "App\\Presentation\\GraphQL\\Queries\\ProductsQuery")
+
+    "Get a single product by ID"
+    product(id: ID!): Product! @field(resolver: "App\\Presentation\\GraphQL\\Queries\\ProductQuery")
 }
 
 "Account of a person who uses this application."
@@ -53,6 +59,15 @@ type Mutation {
 
     "Set an address as default"
     setDefaultAddress(id: ID!): Address! @field(resolver: "App\\Presentation\\GraphQL\\Mutations\\SetDefaultAddressMutation") @guard
+
+    "Create a new product"
+    createProduct(input: CreateProductInput!): Product! @field(resolver: "App\\Presentation\\GraphQL\\Mutations\\CreateProductMutation") @guard
+
+    "Update an existing product"
+    updateProduct(id: ID!, input: UpdateProductInput!): Product! @field(resolver: "App\\Presentation\\GraphQL\\Mutations\\UpdateProductMutation") @guard
+
+    "Delete a product"
+    deleteProduct(id: ID!): DeleteProductPayload! @field(resolver: "App\\Presentation\\GraphQL\\Mutations\\DeleteProductMutation") @guard
 }
 
 "Input for login mutation"
@@ -215,4 +230,106 @@ type DeleteAddressPayload {
 
     "Message"
     message: String!
+}
+
+"Product type"
+type Product {
+    "Unique primary key"
+    id: ID!
+
+    "Product name"
+    name: String!
+
+    "Product description"
+    description: String
+
+    "Category (text field)"
+    category: String!
+
+    "Brand (text field)"
+    brand: String!
+
+    "Product price"
+    price: Float!
+
+    "Stock quantity"
+    stock: Int!
+
+    "When the product was created"
+    created_at: DateTime!
+
+    "When the product was last updated"
+    updated_at: DateTime!
+}
+
+"Input for creating product"
+input CreateProductInput {
+    "Product name"
+    name: String! @rules(apply: ["required", "string", "max:255"])
+
+    "Product description"
+    description: String
+
+    "Category"
+    category: String! @rules(apply: ["required", "string", "max:100"])
+
+    "Brand"
+    brand: String! @rules(apply: ["required", "string", "max:100"])
+
+    "Price"
+    price: Float! @rules(apply: ["required", "numeric", "min:0"])
+
+    "Stock quantity"
+    stock: Int! @rules(apply: ["required", "integer", "min:0"])
+}
+
+"Input for updating product"
+input UpdateProductInput {
+    "Product name"
+    name: String! @rules(apply: ["required", "string", "max:255"])
+
+    "Product description"
+    description: String
+
+    "Category"
+    category: String! @rules(apply: ["required", "string", "max:100"])
+
+    "Brand"
+    brand: String! @rules(apply: ["required", "string", "max:100"])
+
+    "Price"
+    price: Float! @rules(apply: ["required", "numeric", "min:0"])
+
+    "Stock quantity"
+    stock: Int! @rules(apply: ["required", "integer", "min:0"])
+}
+
+"Delete product response"
+type DeleteProductPayload {
+    "Success status"
+    success: Boolean!
+
+    "Message"
+    message: String!
+}
+
+"Product filter input"
+input ProductFilterInput {
+    "Search in name and description"
+    search: String
+
+    "Filter by category"
+    category: String
+
+    "Filter by brand"
+    brand: String
+
+    "Minimum price"
+    min_price: Float
+
+    "Maximum price"
+    max_price: Float
+
+    "Filter by stock availability"
+    in_stock: Boolean
 }

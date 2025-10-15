@@ -16,6 +16,9 @@ setup:
 	@echo "Laravel passport install ediliyor."
 	docker-compose exec app php artisan passport:client --personal
 
+    @echo "Veriler seed ediliyor."
+    docker-compose exec app php artisan db:seed --class="App\\Infrastructure\\Database\\Seeders\\DatabaseSeeder"
+
 	@echo "Laravel setup tamamlandı. http://localhost:8080"
 
 migrate:
