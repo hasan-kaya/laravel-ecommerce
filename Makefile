@@ -13,6 +13,9 @@ setup:
 	@echo "Veritabanı migrate ediliyor."
 	docker-compose exec app php artisan migrate
 
+	@echo "Laravel passport install ediliyor."
+	docker-compose exec app php artisan passport:install --no-interaction
+
 	@echo "Laravel setup tamamlandı. http://localhost:8080"
 
 migrate:

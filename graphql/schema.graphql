@@ -39,3 +39,48 @@ type User {
     "When the account was last updated."
     updated_at: DateTime!
 }
+
+"Authentication mutations"
+type Mutation {
+    "Login a user and return an access token"
+    login(input: LoginInput!): AuthPayload! @field(resolver: "App\\Presentation\\GraphQL\\Mutations\\LoginMutation")
+
+    "Register a new user and return an access token"
+    register(input: RegisterInput!): AuthPayload! @field(resolver: "App\\Presentation\\GraphQL\\Mutations\\RegisterMutation")
+}
+
+"Input for login mutation"
+input LoginInput {
+    "Email address"
+    email: String! @rules(apply: ["required", "email"])
+
+    "Password"
+    password: String! @rules(apply: ["required", "min:8"])
+}
+
+"Input for register mutation"
+input RegisterInput {
+    "Full name"
+    name: String! @rules(apply: ["required", "string", "max:255"])
+
+    "Email address"
+    email: String! @rules(apply: ["required", "email", "unique:users,email"])
+
+    "Password"
+    password: String! @rules(apply: ["required", "min:8"])
+}
+
+"Authentication response payload"
+type AuthPayload {
+    "Access token for authentication"
+    access_token: String!
+
+    "Token type (usually Bearer)"
+    token_type: String!
+
+    "Token expiration time in seconds"
+    expires_in: Int!
+
+    "Authenticated user"
+    user: User!
+}
