@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Application\Order\CreateOrder;
 
+use App\Application\Payment\ProcessPayment\ProcessPaymentCommand;
+use App\Application\Payment\ProcessPayment\ProcessPaymentUseCase;
 use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Order\Enums\PaymentStatus;
 use App\Domain\Order\OrderRepositoryInterface;
@@ -20,6 +22,7 @@ final readonly class CreateOrderUseCase
         private OrderRepositoryInterface $orderRepository,
         private ProductRepositoryInterface $productRepository,
         private TransactionManagerInterface $transactionManager,
+        private ProcessPaymentUseCase $processPaymentUseCase,
     ) {
     }
 
@@ -50,16 +53,43 @@ final readonly class CreateOrderUseCase
             // 5. Generate order number (Domain logic)
             $orderNumber = OrderNumber::generate();
 
-            // 6. Create order (status: COMPLETED - simplified for now)
+            // 6. Create order (status: PENDING - will be updated after payment)
             $orderId = $this->orderRepository->create([
                 'user_id' => $command->userId,
                 'order_number' => $orderNumber->value,
-                'status' => OrderStatus::COMPLETED->value,
-                'payment_status' => PaymentStatus::PAID->value,
+                'status' => OrderStatus::PENDING->value,
+                'payment_status' => PaymentStatus::PENDING->value,
                 'total_amount' => $lineTotal->total,
             ]);
 
-            // 7. Create order items
+            // 7. Process payment (via ProcessPaymentUseCase - Composition)
+            $paymentResult = $this->processPaymentUseCase->execute(
+                new ProcessPaymentCommand(
+                    amount: $lineTotal->total,
+                    method: $command->paymentMethod,
+                    metadata: [
+                        'order_id' => $orderId,
+                        'user_id' => $command->userId,
+                    ]
+                )
+            );
+
+            // 8. Update order based on payment result
+            if ($paymentResult->success) {
+                $this->orderRepository->update($orderId, [
+                    'status' => OrderStatus::COMPLETED->value,
+                    'payment_status' => PaymentStatus::PAID->value,
+                ]);
+            } else {
+                $this->orderRepository->update($orderId, [
+                    'status' => OrderStatus::FAILED->value,
+                    'payment_status' => PaymentStatus::FAILED->value,
+                ]);
+                
+                throw new \RuntimeException($paymentResult->message);
+            }
+
+            // 9. Create order items
             $this->orderRepository->createOrderItems($orderId, [
                 [
                     'product_id' => $product['id'],
@@ -70,7 +100,7 @@ final readonly class CreateOrderUseCase
                 ],
             ]);
 
-            // 8. Return order data
+            // 10. Return order data
             $orderData = $this->orderRepository->findById($orderId);
             return OrderData::fromArray($orderData);
         });

@@ -6,6 +6,7 @@ namespace App\Presentation\GraphQL\Mutations;
 
 use App\Application\Order\CreateOrder\CreateOrderCommand;
 use App\Application\Order\CreateOrder\CreateOrderUseCase;
+use App\Domain\Payment\Enums\PaymentMethod;
 use App\Domain\Shared\Exceptions\DomainException;
 use GraphQL\Error\Error;
 
@@ -26,6 +27,7 @@ final readonly class CreateOrderMutation
                 userId: $user->id,
                 productId: (int) $input['product_id'],
                 quantity: (int) $input['quantity'],
+                paymentMethod: PaymentMethod::from($input['payment_method']),
             );
 
             $order = $this->createOrderUseCase->execute($command);

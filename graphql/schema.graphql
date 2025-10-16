@@ -371,4 +371,10 @@ type OrderItem {
 input CreateOrderInput {
     product_id: ID! @rules(apply: ["required", "exists:products,id"])
     quantity: Int! @rules(apply: ["required", "min:1"])
+    payment_method: PaymentMethodEnum! @rules(apply: ["required"])
+}
+
+"Payment Method Enum"
+enum PaymentMethodEnum {
+    IYZICO @enum(value: "iyzico")
 }
