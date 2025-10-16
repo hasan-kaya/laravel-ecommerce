@@ -51,7 +51,7 @@ final readonly class EloquentOrderRepository implements OrderRepositoryInterface
             'status' => $order->status->value,
             'payment_status' => $order->payment_status->value,
             'total_amount' => (float) $order->total_amount,
-            'created_at' => $order->created_at->toIso8601String(),
+            'created_at' => $order->created_at->format('Y-m-d H:i:s'),
             'items' => $order->items->map(fn($item) => [
                 'id' => $item->id,
                 'product_id' => $item->product_id,
@@ -75,8 +75,15 @@ final readonly class EloquentOrderRepository implements OrderRepositoryInterface
                 'status' => $order->status->value,
                 'payment_status' => $order->payment_status->value,
                 'total_amount' => (float) $order->total_amount,
-                'created_at' => $order->created_at->toIso8601String(),
-                'items_count' => $order->items->count(),
+                'created_at' => $order->created_at->format('Y-m-d H:i:s'),
+                'items' => $order->items->map(fn($item) => [
+                    'id' => $item->id,
+                    'product_id' => $item->product_id,
+                    'product_name' => $item->product_name,
+                    'price' => (float) $item->price,
+                    'quantity' => $item->quantity,
+                    'line_total' => (float) $item->line_total,
+                ])->toArray(),
             ])
             ->toArray();
     }
