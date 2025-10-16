@@ -39,6 +39,7 @@ final readonly class CreateOrderMutation
                 'payment_status' => $order->paymentStatus,
                 'total_amount' => $order->totalAmount,
                 'items' => $order->items,
+                'created_at' => $order->createdAt,
             ];
         } catch (DomainException $e) {
             throw new Error($e->getMessage());

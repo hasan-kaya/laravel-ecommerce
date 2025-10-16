@@ -267,11 +267,11 @@ type Product {
     "Stock quantity"
     stock: Int!
 
-    "When the product was created"
-    created_at: DateTime!
+    "When the product was created (null for Elasticsearch results)"
+    created_at: DateTime
 
-    "When the product was last updated"
-    updated_at: DateTime!
+    "When the product was last updated (null for Elasticsearch results)"
+    updated_at: DateTime
 }
 
 "Input for creating product"

@@ -16,8 +16,8 @@ final readonly class ProductData
         public string $brand,
         public float $price,
         public int $stock,
-        public string $createdAt,
-        public string $updatedAt,
+        public ?string $createdAt,
+        public ?string $updatedAt,
     ) {
     }
 
@@ -31,8 +31,8 @@ final readonly class ProductData
             brand: $product->brand,
             price: $product->price,
             stock: $product->stock,
-            createdAt: $product->createdAt?->format('Y-m-d H:i:s') ?? '',
-            updatedAt: $product->updatedAt?->format('Y-m-d H:i:s') ?? '',
+            createdAt: $product->createdAt?->format('Y-m-d H:i:s'),
+            updatedAt: $product->updatedAt?->format('Y-m-d H:i:s'),
         );
     }
 }

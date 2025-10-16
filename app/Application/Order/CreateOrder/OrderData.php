@@ -13,6 +13,7 @@ final readonly class OrderData
         public string $paymentStatus,
         public float $totalAmount,
         public array $items,
+        public string $createdAt,
     ) {
     }
 
@@ -25,6 +26,7 @@ final readonly class OrderData
             paymentStatus: $data['payment_status'],
             totalAmount: $data['total_amount'],
             items: $data['items'] ?? [],
+            createdAt: $data['created_at'],
         );
     }
 }
