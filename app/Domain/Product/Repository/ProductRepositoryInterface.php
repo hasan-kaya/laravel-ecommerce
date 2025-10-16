@@ -10,21 +10,6 @@ interface ProductRepositoryInterface
 {
     public function findById(int $id): ?Product;
 
-    /**
-     * @return Product[]
-     */
-    public function findAll(int $limit = 50, int $offset = 0): array;
-
-    /**
-     * @return Product[]
-     */
-    public function findByCategory(string $category, int $limit = 50, int $offset = 0): array;
-
-    /**
-     * @return Product[]
-     */
-    public function findByBrand(string $brand, int $limit = 50, int $offset = 0): array;
-
     public function create(
         string $name,
         ?string $description,

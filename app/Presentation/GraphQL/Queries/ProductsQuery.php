@@ -28,12 +28,12 @@ final readonly class ProductsQuery
             $offset = $args['offset'] ?? 0;
 
             $products = $this->searchProductsUseCase->execute(
-                query: $filter['search'] ?? null,
+                query: $filter['query'] ?? null,
                 category: $filter['category'] ?? null,
                 brand: $filter['brand'] ?? null,
-                minPrice: isset($filter['min_price']) ? (float) $filter['min_price'] : null,
-                maxPrice: isset($filter['max_price']) ? (float) $filter['max_price'] : null,
-                inStock: $filter['in_stock'] ?? null,
+                minPrice: isset($filter['minPrice']) ? (float) $filter['minPrice'] : null,
+                maxPrice: isset($filter['maxPrice']) ? (float) $filter['maxPrice'] : null,
+                inStock: $filter['inStock'] ?? null,
                 limit: $limit,
                 offset: $offset
             );

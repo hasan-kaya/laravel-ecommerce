@@ -327,8 +327,8 @@ type DeleteProductPayload {
 
 "Product filter input"
 input ProductFilterInput {
-    "Search in name and description"
-    search: String
+    "Full-text search in name and description"
+    query: String
 
     "Filter by category"
     category: String
@@ -337,13 +337,13 @@ input ProductFilterInput {
     brand: String
 
     "Minimum price"
-    min_price: Float
+    minPrice: Float
 
     "Maximum price"
-    max_price: Float
+    maxPrice: Float
 
     "Filter by stock availability"
-    in_stock: Boolean
+    inStock: Boolean
 }
 
 "Order"
@@ -381,7 +381,7 @@ enum PaymentMethodEnum {
 
 # Subscription feature will be added later when WebSocket server is configured
 # Requires: Pusher/Soketi + Laravel Broadcasting configuration
-# 
+#
 # type Subscription {
 #     orderStatusUpdated(orderId: ID!): OrderStatusUpdate!
 # }
