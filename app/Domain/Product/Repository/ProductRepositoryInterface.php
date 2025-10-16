@@ -49,6 +49,18 @@ interface ProductRepositoryInterface
     public function updateStock(int $id, int $stock): Product;
 
     /**
+     * Find product with pessimistic lock (for race condition protection)
+     * Returns array format for consistency
+     */
+    public function findByIdWithLock(int $id): ?array;
+
+    /**
+     * Atomically decrement stock
+     * Throws exception if insufficient stock
+     */
+    public function decrementStock(int $productId, int $quantity): void;
+
+    /**
      * @return Product[]
      */
     public function search(

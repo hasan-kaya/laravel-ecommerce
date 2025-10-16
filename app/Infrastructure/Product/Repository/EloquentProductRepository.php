@@ -8,6 +8,7 @@ use App\Domain\Product\Entity\Product as DomainProduct;
 use App\Domain\Product\Repository\ProductRepositoryInterface;
 use App\Infrastructure\Eloquent\Product as EloquentProduct;
 use DateTimeImmutable;
+use Illuminate\Support\Facades\DB;
 
 final readonly class EloquentProductRepository implements ProductRepositoryInterface
 {
@@ -105,6 +106,36 @@ final readonly class EloquentProductRepository implements ProductRepositoryInter
         $eloquentProduct->update(['stock' => $stock]);
 
         return $this->toDomain($eloquentProduct->fresh());
+    }
+
+    public function findByIdWithLock(int $id): ?array
+    {
+        // Ensure we're in a transaction for pessimistic locking
+        return DB::transaction(function () use ($id) {
+            $product = EloquentProduct::where('id', $id)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$product) {
+                return null;
+            }
+
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'description' => $product->description,
+                'category' => $product->category,
+                'brand' => $product->brand,
+                'price' => (float) $product->price,
+                'stock' => $product->stock,
+            ];
+        });
+    }
+
+    public function decrementStock(int $productId, int $quantity): void
+    {
+        EloquentProduct::where('id', $productId)
+            ->decrement('stock', $quantity);
     }
 
     public function search(

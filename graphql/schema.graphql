@@ -17,6 +17,9 @@ type Query {
 
     "Get a single product by ID"
     product(id: ID!): Product! @field(resolver: "App\\Presentation\\GraphQL\\Queries\\ProductQuery")
+
+    "Get my orders"
+    myOrders: [Order!]! @field(resolver: "App\\Presentation\\GraphQL\\Queries\\MyOrdersQuery") @guard
 }
 
 "Account of a person who uses this application."
@@ -74,6 +77,9 @@ type Mutation {
 
     "Delete a product (Admin only)"
     deleteProduct(id: ID!): DeleteProductPayload! @field(resolver: "App\\Presentation\\GraphQL\\Mutations\\DeleteProductMutation") @admin
+
+    "Create order (Buy Now)"
+    createOrder(input: CreateOrderInput!): Order! @field(resolver: "App\\Presentation\\GraphQL\\Mutations\\CreateOrderMutation") @guard
 }
 
 "Input for login mutation"
@@ -338,4 +344,31 @@ input ProductFilterInput {
 
     "Filter by stock availability"
     in_stock: Boolean
+}
+
+"Order"
+type Order {
+    id: ID!
+    order_number: String!
+    status: String!
+    payment_status: String!
+    total_amount: Float!
+    items: [OrderItem!]!
+    created_at: DateTime!
+}
+
+"Order Item"
+type OrderItem {
+    id: ID!
+    product_id: ID!
+    product_name: String!
+    price: Float!
+    quantity: Int!
+    line_total: Float!
+}
+
+"Create Order Input"
+input CreateOrderInput {
+    product_id: ID! @rules(apply: ["required", "exists:products,id"])
+    quantity: Int! @rules(apply: ["required", "min:1"])
 }
