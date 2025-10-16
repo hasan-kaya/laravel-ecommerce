@@ -9,6 +9,7 @@
 - [Database Schema](#database-schema)
 - [Elasticsearch Integration](#elasticsearch-integration)
 - [Quick Start](#quick-start)
+- [Backup & Disaster Recovery](#backup--disaster-recovery)
 
 ---
 
@@ -307,6 +308,69 @@ cp .env.example .env
 # 3. Run setup (all-in-one)
 make setup
 ```
+
+### Available Commands
+
+```bash
+# Setup & Deployment
+make setup              # Initial setup
+make start              # Start containers
+make migrate            # Run migrations
+
+# Backup & Recovery
+make backup             # Create full backup
+make restore            # Restore from backup (interactive)
+make restore-latest     # Restore from latest backup
+
+# Rollback
+make rollback-migration steps=1  # Rollback migrations
+make rollback-deployment         # Full deployment rollback
+make rollback-all                # Complete system rollback
+
+# Health Checks
+make healthcheck                 # Single health check
+make healthcheck-monitor interval=60  # Continuous monitoring
+
+# Performance
+make optimize           # Optimize cache
+make cache-clear        # Clear all caches
+
+# Elasticsearch
+make elasticsearch-index     # Create index
+make elasticsearch-reindex   # Reindex products
+```
+
+---
+
+## 💾 Backup & Disaster Recovery
+
+### Backup & Restore
+
+```bash
+make backup              # Full backup (DB, Redis, Elasticsearch, files)
+make restore-latest      # Restore from latest backup
+make healthcheck         # System health check
+```
+
+**Backup Contents:** PostgreSQL, Redis, Elasticsearch, application files, storage  
+**Retention:** 7 days | **Location:** `./backups/YYYYMMDD_HHMMSS/`
+
+### Rollback Operations
+
+```bash
+make rollback-migration steps=1   # Rollback migrations
+make rollback-deployment          # Deployment rollback
+./scripts/rollback.sh emergency   # Emergency (no confirmation)
+```
+
+### Quick Recovery
+
+| Scenario | Command | Time |
+|----------|---------|------|
+| Database crash | `make restore-latest` | 5-15 min |
+| Migration failure | `make rollback-migration steps=1` | 1-2 min |
+| Deployment failed | `make rollback-deployment` | 10-15 min |
+| Cache issues | `make cache-clear` | 30 sec |
 
 ---
 

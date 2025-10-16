@@ -22,3 +22,7 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Disaster Recovery
+/backups
+/storage/logs/healthcheck-alerts.log
