@@ -4,9 +4,10 @@ namespace App\Infrastructure\Providers;
 
 use App\Domain\Address\Repository\AddressRepositoryInterface;
 use App\Domain\Auth\TokenServiceInterface;
-use App\Domain\Order\OrderRepositoryInterface;
+use App\Domain\Order\Repository\OrderRepositoryInterface;
 use App\Domain\Payment\Enums\PaymentMethod;
-use App\Domain\Payment\PaymentServiceFactoryInterface;
+use App\Domain\Payment\Repository\PaymentRepositoryInterface;
+use App\Domain\Payment\Contract\PaymentServiceFactoryInterface;
 use App\Domain\Product\Repository\ProductRepositoryInterface;
 use App\Domain\Shared\TransactionManagerInterface;
 use App\Domain\User\Repository\UserRepositoryInterface;
@@ -16,6 +17,7 @@ use App\Infrastructure\Database\DatabaseTransactionManager;
 use App\Infrastructure\Order\Repository\EloquentOrderRepository;
 use App\Infrastructure\Payment\FakeIyzicoPaymentService;
 use App\Infrastructure\Payment\PaymentServiceFactory;
+use App\Infrastructure\Payment\Repository\EloquentPaymentRepository;
 use App\Infrastructure\Product\Repository\EloquentProductRepository;
 use App\Infrastructure\User\Repository\EloquentUserRepository;
 use Illuminate\Support\ServiceProvider;
@@ -33,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(AddressRepositoryInterface::class, EloquentAddressRepository::class);
         $this->app->singleton(ProductRepositoryInterface::class, EloquentProductRepository::class);
         $this->app->singleton(OrderRepositoryInterface::class, EloquentOrderRepository::class);
+        $this->app->singleton(PaymentRepositoryInterface::class, EloquentPaymentRepository::class);
         $this->app->singleton(TransactionManagerInterface::class, DatabaseTransactionManager::class);
 
         // Payment Service Factory (Strategy Pattern)

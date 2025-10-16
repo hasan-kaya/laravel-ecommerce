@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Payment;
+namespace App\Domain\Payment\Contract;
 
 /**
  * Payment Service Interface (Domain Contract)

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Order\Repository;
 
-use App\Domain\Order\OrderRepositoryInterface;
+use App\Domain\Order\Repository\OrderRepositoryInterface;
 use App\Infrastructure\Eloquent\Order;
 use App\Infrastructure\Eloquent\OrderItem;
 use Illuminate\Support\Facades\DB;

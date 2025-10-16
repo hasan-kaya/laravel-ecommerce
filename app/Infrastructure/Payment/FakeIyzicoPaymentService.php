@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Payment;
 
-use App\Domain\Payment\PaymentServiceInterface;
+use App\Domain\Payment\Contract\PaymentServiceInterface;
 
 /**
  * Fake Iyzico Payment Service

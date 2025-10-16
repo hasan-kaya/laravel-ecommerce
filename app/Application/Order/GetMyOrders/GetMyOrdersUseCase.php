@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Order\GetMyOrders;
 
-use App\Domain\Order\OrderRepositoryInterface;
+use App\Domain\Order\Repository\OrderRepositoryInterface;
 
 final readonly class GetMyOrdersUseCase
 {

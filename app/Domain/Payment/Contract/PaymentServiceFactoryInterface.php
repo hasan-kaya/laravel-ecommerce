@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Payment;
+namespace App\Domain\Payment\Contract;
 
 use App\Domain\Payment\Enums\PaymentMethod;
 
@@ -22,6 +22,9 @@ interface PaymentServiceFactoryInterface
      * @throws \RuntimeException If service not registered
      */
     public function get(PaymentMethod $method): PaymentServiceInterface;
+    
+    /**
+     * Check if payment method is supported
 
     /**
      * Check if payment method is supported

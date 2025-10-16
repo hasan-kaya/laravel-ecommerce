@@ -8,9 +8,10 @@ use App\Application\Payment\ProcessPayment\ProcessPaymentCommand;
 use App\Application\Payment\ProcessPayment\ProcessPaymentUseCase;
 use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Order\Enums\PaymentStatus;
-use App\Domain\Order\OrderRepositoryInterface;
+use App\Domain\Order\Repository\OrderRepositoryInterface;
 use App\Domain\Order\ValueObject\LineTotal;
 use App\Domain\Order\ValueObject\OrderNumber;
+use App\Domain\Payment\Repository\PaymentRepositoryInterface;
 use App\Domain\Product\Repository\ProductRepositoryInterface;
 use App\Domain\Shared\Exceptions\InsufficientStockException;
 use App\Domain\Shared\Exceptions\ProductNotFoundException;
@@ -23,6 +24,7 @@ final readonly class CreateOrderUseCase
         private ProductRepositoryInterface $productRepository,
         private TransactionManagerInterface $transactionManager,
         private ProcessPaymentUseCase $processPaymentUseCase,
+        private PaymentRepositoryInterface $paymentRepository,
     ) {
     }
 
@@ -62,34 +64,23 @@ final readonly class CreateOrderUseCase
                 'total_amount' => $lineTotal->total,
             ]);
 
-            // 7. Process payment (via ProcessPaymentUseCase - Composition)
+            // 7. Get attempt number for this order
+            $attemptNumber = $this->paymentRepository->getNextAttemptNumber($orderId);
+
+            // 8. Process payment (via ProcessPaymentUseCase - Composition)
             $paymentResult = $this->processPaymentUseCase->execute(
                 new ProcessPaymentCommand(
+                    orderId: $orderId,
                     amount: $lineTotal->total,
                     method: $command->paymentMethod,
+                    attemptNumber: $attemptNumber,
                     metadata: [
-                        'order_id' => $orderId,
                         'user_id' => $command->userId,
                     ]
                 )
             );
 
-            // 8. Update order based on payment result
-            if ($paymentResult->success) {
-                $this->orderRepository->update($orderId, [
-                    'status' => OrderStatus::COMPLETED->value,
-                    'payment_status' => PaymentStatus::PAID->value,
-                ]);
-            } else {
-                $this->orderRepository->update($orderId, [
-                    'status' => OrderStatus::FAILED->value,
-                    'payment_status' => PaymentStatus::FAILED->value,
-                ]);
-                
-                throw new \RuntimeException($paymentResult->message);
-            }
-
-            // 9. Create order items
+            // 9. Create order items (before payment check)
             $this->orderRepository->createOrderItems($orderId, [
                 [
                     'product_id' => $product['id'],
@@ -100,7 +91,20 @@ final readonly class CreateOrderUseCase
                 ],
             ]);
 
-            // 10. Return order data
+            // 10. Update order based on payment result
+            if ($paymentResult->success) {
+                $this->orderRepository->update($orderId, [
+                    'status' => OrderStatus::COMPLETED->value,
+                    'payment_status' => PaymentStatus::PAID->value,
+                ]);
+            } else {
+                $this->orderRepository->update($orderId, [
+                    'status' => OrderStatus::FAILED->value,
+                    'payment_status' => PaymentStatus::FAILED->value,
+                ]);
+            }
+
+            // 11. Return order data
             $orderData = $this->orderRepository->findById($orderId);
             return OrderData::fromArray($orderData);
         });
