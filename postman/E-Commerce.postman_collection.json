@@ -1,0 +1,397 @@
+{
+  "info": {
+    "_postman_id": "ecommerce-graphql-api",
+    "name": "E-Commerce GraphQL API",
+    "description": "Complete GraphQL API collection for E-Commerce Platform\n\n**Stack:** Laravel 12, GraphQL (Lighthouse), PostgreSQL, Elasticsearch, Redis\n\n**Features:**\n- Authentication (Login, Register)\n- User Profile Management  \n- Address Management\n- Product Management (Admin)\n- Order Management\n- Product Search (Elasticsearch)\n\n**Authentication:** Use login/register to get access_token, then set in environment\n\n**Base URL:** {{base_url}}/graphql",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const res = pm.response.json();",
+                  "  if (res.data?.register) {",
+                  "    pm.environment.set('access_token', res.data.register.access_token);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation Register($input: RegisterInput!) {\n  register(input: $input) {\n    access_token\n    token_type\n    expires_in\n    user { id name email role created_at }\n  }\n}",
+                "variables": "{\"input\":{\"name\":\"John Doe\",\"email\":\"john@example.com\",\"password\":\"password123\"}}"
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const res = pm.response.json();",
+                  "  if (res.data?.login) {",
+                  "    pm.environment.set('access_token', res.data.login.access_token);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation Login($input: LoginInput!) {\n  login(input: $input) {\n    access_token\n    token_type\n    expires_in\n    user { id name email role }\n  }\n}",
+                "variables": "{\"input\":{\"email\":\"john@example.com\",\"password\":\"password123\"}}"
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{access_token}}"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query { me { id name email role email_verified_at created_at updated_at } }"
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{access_token}}"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation UpdateProfile($input: UpdateProfileInput!) {\n  updateProfile(input: $input) {\n    user { id name email updated_at }\n    message\n  }\n}",
+                "variables": "{\"input\":{\"name\":\"John Updated\",\"email\":\"john.updated@example.com\"}}"
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Address",
+      "item": [
+        {
+          "name": "Get My Addresses",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{access_token}}"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query { addresses { id label full_name phone city district neighborhood address type is_default created_at } }"
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Create Address",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{access_token}}"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation CreateAddress($input: CreateAddressInput!) {\n  createAddress(input: $input) {\n    id label full_name phone city district neighborhood address type is_default\n  }\n}",
+                "variables": "{\"input\":{\"label\":\"Home\",\"full_name\":\"John Doe\",\"phone\":\"+90 555 123 4567\",\"city\":\"Istanbul\",\"district\":\"Kadikoy\",\"neighborhood\":\"Moda\",\"address\":\"123 Main St\",\"type\":\"shipping\",\"is_default\":true}}"
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Update Address",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{access_token}}"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation UpdateAddress($id: ID!, $input: UpdateAddressInput!) {\n  updateAddress(id: $id, input: $input) {\n    id label full_name phone city district neighborhood address type is_default\n  }\n}",
+                "variables": "{\"id\":\"1\",\"input\":{\"label\":\"Home\",\"full_name\":\"John Doe\",\"phone\":\"+90 555 123 4567\",\"city\":\"Istanbul\",\"district\":\"Kadikoy\",\"neighborhood\":\"Moda\",\"address\":\"456 Updated St\",\"type\":\"shipping\",\"is_default\":true}}"
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Set Default Address",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{access_token}}"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation SetDefaultAddress($id: ID!) { setDefaultAddress(id: $id) { id is_default } }",
+                "variables": "{\"id\":\"1\"}"
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Delete Address",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{access_token}}"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation DeleteAddress($id: ID!) { deleteAddress(id: $id) { success message } }",
+                "variables": "{\"id\":\"1\"}"
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Product",
+      "item": [
+        {
+          "name": "Get All Products",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query GetProducts($filter: ProductFilterInput, $limit: Int, $offset: Int) {\n  products(filter: $filter, limit: $limit, offset: $offset) {\n    id name description category brand price stock created_at\n  }\n}",
+                "variables": "{\"limit\":20,\"offset\":0}"
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Search Products (Elasticsearch)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query SearchProducts($filter: ProductFilterInput) {\n  products(filter: $filter) {\n    id name description category brand price stock\n  }\n}",
+                "variables": "{\"filter\":{\"query\":\"laptop\",\"category\":\"Electronics\",\"minPrice\":500,\"maxPrice\":2000,\"inStock\":true}}"
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Get Single Product",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query GetProduct($id: ID!) { product(id: $id) { id name description category brand price stock created_at } }",
+                "variables": "{\"id\":\"1\"}"
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Create Product (Admin)",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{access_token}}"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation CreateProduct($input: CreateProductInput!) {\n  createProduct(input: $input) {\n    id name description category brand price stock created_at\n  }\n}",
+                "variables": "{\"input\":{\"name\":\"MacBook Pro 16\\\"\",\"description\":\"Apple MacBook Pro 16-inch with M3 Max chip\",\"category\":\"Electronics\",\"brand\":\"Apple\",\"price\":2499.99,\"stock\":50}}"
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Update Product (Admin)",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{access_token}}"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation UpdateProduct($id: ID!, $input: UpdateProductInput!) {\n  updateProduct(id: $id, input: $input) {\n    id name description category brand price stock updated_at\n  }\n}",
+                "variables": "{\"id\":\"1\",\"input\":{\"name\":\"MacBook Pro 16\\\"\",\"description\":\"Updated\",\"category\":\"Electronics\",\"brand\":\"Apple\",\"price\":2599.99,\"stock\":45}}"
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Delete Product (Admin)",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{access_token}}"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation DeleteProduct($id: ID!) { deleteProduct(id: $id) { success message } }",
+                "variables": "{\"id\":\"1\"}"
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Order",
+      "item": [
+        {
+          "name": "Get My Orders",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{access_token}}"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "query {\n  myOrders {\n    id order_number status payment_status total_amount created_at\n    items { id product_id product_name price quantity line_total }\n  }\n}"
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        },
+        {
+          "name": "Create Order (Buy Now)",
+          "request": {
+            "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{access_token}}"}]},
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "graphql",
+              "graphql": {
+                "query": "mutation CreateOrder($input: CreateOrderInput!) {\n  createOrder(input: $input) {\n    id order_number status payment_status total_amount created_at\n    items { id product_id product_name price quantity line_total }\n  }\n}",
+                "variables": "{\"input\":{\"product_id\":\"1\",\"quantity\":1,\"payment_method\":\"IYZICO\"}}"
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/graphql",
+              "host": ["{{base_url}}"],
+              "path": ["graphql"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
