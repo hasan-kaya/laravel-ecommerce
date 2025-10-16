@@ -18,12 +18,14 @@ class UserSeeder extends Seeder
             'role' => 'admin',
         ]);
 
-        User::create([
-            'name' => 'User',
-            'email' => 'user@example.com',
-            'password' => '12345678',
-            'role' => 'user',
-        ]);
+        for ($i = 1; $i <= 5; $i++) {
+            User::create([
+                'name' => 'User' . $i,
+                'email' => 'user' . $i . '@example.com',
+                'password' => '12345678',
+                'role' => 'user',
+            ]);
+        }
 
         $this->command->info('Users created successfully.');
     }

@@ -378,3 +378,18 @@ input CreateOrderInput {
 enum PaymentMethodEnum {
     IYZICO @enum(value: "iyzico")
 }
+
+# Subscription feature will be added later when WebSocket server is configured
+# Requires: Pusher/Soketi + Laravel Broadcasting configuration
+# 
+# type Subscription {
+#     orderStatusUpdated(orderId: ID!): OrderStatusUpdate!
+# }
+#
+# type OrderStatusUpdate {
+#     orderId: ID!
+#     status: String!
+#     paymentStatus: String!
+#     transactionId: String
+#     updatedAt: DateTime!
+# }

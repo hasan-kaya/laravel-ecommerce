@@ -47,10 +47,10 @@ interface PaymentRepositoryInterface
     public function findByOrderId(int $orderId): array;
 
     /**
-     * Get next attempt number for an order
+     * Find payment by idempotency key
      * 
-     * @param int $orderId
-     * @return int
+     * @param string $idempotencyKey
+     * @return array|null
      */
-    public function getNextAttemptNumber(int $orderId): int;
+    public function findByIdempotencyKey(string $idempotencyKey): ?array;
 }

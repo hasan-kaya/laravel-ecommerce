@@ -6,12 +6,17 @@ namespace App\Infrastructure\Product\Repository;
 
 use App\Domain\Product\Entity\Product as DomainProduct;
 use App\Domain\Product\Repository\ProductRepositoryInterface;
+use App\Domain\Product\Repository\StockReservationRepositoryInterface;
 use App\Infrastructure\Eloquent\Product as EloquentProduct;
 use DateTimeImmutable;
 use Illuminate\Support\Facades\DB;
 
 final readonly class EloquentProductRepository implements ProductRepositoryInterface
 {
+    public function __construct(
+        private StockReservationRepositoryInterface $stockReservationRepository,
+    ) {
+    }
     public function findById(int $id): ?DomainProduct
     {
         $product = EloquentProduct::find($id);
@@ -110,7 +115,6 @@ final readonly class EloquentProductRepository implements ProductRepositoryInter
 
     public function findByIdWithLock(int $id): ?array
     {
-        // Ensure we're in a transaction for pessimistic locking
         return DB::transaction(function () use ($id) {
             $product = EloquentProduct::where('id', $id)
                 ->lockForUpdate()
@@ -132,10 +136,33 @@ final readonly class EloquentProductRepository implements ProductRepositoryInter
         });
     }
 
+    public function getAvailableStock(int $productId): int
+    {
+        $product = EloquentProduct::find($productId);
+        if (!$product) {
+            return 0;
+        }
+
+        $totalStock = $product->stock;
+        $reservedStock = $this->stockReservationRepository->getTotalReservedQuantity($productId);
+
+        return max(0, $totalStock - $reservedStock);
+    }
+
     public function decrementStock(int $productId, int $quantity): void
     {
         EloquentProduct::where('id', $productId)
             ->decrement('stock', $quantity);
+    }
+
+    public function decrementStockOptimistic(int $productId, int $quantity): bool
+    {
+        $affectedRows = DB::table('products')
+            ->where('id', $productId)
+            ->where('stock', '>=', $quantity)
+            ->decrement('stock', $quantity);
+
+        return $affectedRows > 0;
     }
 
     public function search(

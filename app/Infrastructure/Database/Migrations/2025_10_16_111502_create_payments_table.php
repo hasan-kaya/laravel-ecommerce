@@ -19,15 +19,13 @@ return new class extends Migration
             $table->enum('status', ['pending', 'processing', 'success', 'failed'])->default('pending');
             $table->string('transaction_id')->nullable()->unique();
             $table->text('error_message')->nullable();
-            $table->integer('attempt_number')->default(1);
             $table->timestamp('processed_at')->nullable();
             $table->json('metadata')->nullable();
             $table->timestamps();
-            
+
             // Indexes for performance
             $table->index(['order_id', 'status']);
             $table->index('transaction_id');
-            $table->index(['order_id', 'attempt_number']);
         });
     }
 

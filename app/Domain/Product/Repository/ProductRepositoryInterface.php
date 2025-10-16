@@ -55,10 +55,23 @@ interface ProductRepositoryInterface
     public function findByIdWithLock(int $id): ?array;
 
     /**
-     * Atomically decrement stock
+     * Get available stock (total stock - PENDING reservations)
+     * Only PENDING reservations are counted, as CONFIRMED already decremented
+     */
+    public function getAvailableStock(int $productId): int;
+
+    /**
+     * Atomically decrement stock (pessimistic locking)
      * Throws exception if insufficient stock
      */
     public function decrementStock(int $productId, int $quantity): void;
+
+    /**
+     * Optimistically decrement stock without lock
+     * Returns true if successful, false if insufficient stock
+     * Uses WHERE stock >= quantity for race condition safety
+     */
+    public function decrementStockOptimistic(int $productId, int $quantity): bool;
 
     /**
      * @return Product[]

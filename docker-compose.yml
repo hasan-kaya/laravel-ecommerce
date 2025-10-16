@@ -4,7 +4,8 @@ services:
   app:
     build:
       context: ./docker/php
-    container_name: laravel_app
+    deploy:
+      replicas: 3
     volumes:
       - .:/var/www/html
     networks:
@@ -38,6 +39,51 @@ services:
       - laravel_network
     volumes:
       - db_data:/var/lib/postgresql/data
+      - ./docker/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    shm_size: 256mb
+
+  redis:
+    image: redis:7-alpine
+    container_name: laravel_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - laravel_network
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxclients 10000 --maxmemory 512mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  queue-worker:
+    build:
+      context: ./docker/php
+    deploy:
+      replicas: 2
+    volumes:
+      - .:/var/www/html
+    networks:
+      - laravel_network
+    depends_on:
+      - app
+      - db
+      - redis
+    command: php artisan queue:work redis --queue=payments,stock --tries=3 --backoff=60,300,900 --timeout=120 --sleep=0 --max-jobs=1000 --max-time=3600
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "php artisan tinker --execute='echo \"OK\";' | grep -q OK"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    environment:
+      - QUEUE_WORKER_ID=${HOSTNAME}
+    mem_limit: 512m
+    cpus: 0.5
 
 networks:
   laravel_network:
@@ -45,3 +91,4 @@ networks:
 
 volumes:
   db_data:
+  redis_data:

@@ -10,7 +10,7 @@ use App\Domain\Payment\Contract\PaymentServiceFactoryInterface;
 
 /**
  * Process Payment Use Case
- * 
+ *
  * Single Responsibility: Handle payment processing logic
  * Encapsulates payment provider selection and execution
  */
@@ -24,44 +24,53 @@ final readonly class ProcessPaymentUseCase
 
     public function execute(ProcessPaymentCommand $command): PaymentResult
     {
-        // 1. Create payment record (PENDING)
-        $paymentId = $this->paymentRepository->create([
+        // 1. Get payment service via Factory (Strategy Pattern)
+        $paymentService = $this->paymentServiceFactory->get($command->method);
+
+        // 2. Process payment with gateway (Gateway returns payment_id as idempotency key)
+        $response = $paymentService->process($command->amount, $command->metadata);
+
+        // 3. Gateway returns payment_id (like Stripe's payment_intent_id or iyzico's paymentId)
+        $paymentIdFromGateway = $response['payment_id'];
+
+        // 4. Check if payment already exists with this payment_id (idempotency check)
+        $existingPayment = $this->paymentRepository->findByIdempotencyKey($paymentIdFromGateway);
+
+        if ($existingPayment) {
+            // Payment already processed, return existing result
+            return $existingPayment['status'] === 'success'
+                ? PaymentResult::success(
+                    transactionId: $existingPayment['transaction_id'] ?? '',
+                    method: $command->method,
+                    message: 'Payment already processed (idempotent)'
+                )
+                : PaymentResult::failure(
+                    method: $command->method,
+                    message: $existingPayment['error_message'] ?? 'Payment already failed'
+                );
+        }
+
+        // 5. Create payment record with gateway's payment_id as idempotency_key
+        $paymentRecordId = $this->paymentRepository->create([
+            'idempotency_key' => $paymentIdFromGateway, // Gateway's payment_id
             'order_id' => $command->orderId,
             'payment_method' => $command->method->value,
             'amount' => $command->amount,
-            'status' => 'pending',
-            'attempt_number' => $command->attemptNumber,
+            'status' => $response['success'] ? 'success' : 'failed',
+            'transaction_id' => $response['transaction_id'],
+            'error_message' => $response['success'] ? null : $response['message'],
+            'processed_at' => now(),
             'metadata' => $command->metadata,
         ]);
 
-        // 2. Get payment service via Factory (Strategy Pattern)
-        $paymentService = $this->paymentServiceFactory->get($command->method);
-
-        // 3. Process payment with gateway
-        $response = $paymentService->process($command->amount, $command->metadata);
-
-        // 4. Update payment record based on result
+        // 6. Return result
         if ($response['success']) {
-            $this->paymentRepository->updateStatus(
-                $paymentId,
-                'success',
-                $response['transaction_id'],
-                null
-            );
-
             return PaymentResult::success(
                 transactionId: $response['transaction_id'],
                 method: $command->method,
                 message: $response['message']
             );
         }
-
-        $this->paymentRepository->updateStatus(
-            $paymentId,
-            'failed',
-            null,
-            $response['message']
-        );
 
         return PaymentResult::failure(
             method: $command->method,

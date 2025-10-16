@@ -11,11 +11,13 @@ use App\Domain\Order\Enums\PaymentStatus;
 use App\Domain\Order\Repository\OrderRepositoryInterface;
 use App\Domain\Order\ValueObject\LineTotal;
 use App\Domain\Order\ValueObject\OrderNumber;
-use App\Domain\Payment\Repository\PaymentRepositoryInterface;
 use App\Domain\Product\Repository\ProductRepositoryInterface;
 use App\Domain\Shared\Exceptions\InsufficientStockException;
 use App\Domain\Shared\Exceptions\ProductNotFoundException;
 use App\Domain\Shared\TransactionManagerInterface;
+use App\Domain\Product\Repository\StockReservationRepositoryInterface;
+use App\Infrastructure\Queue\Jobs\ConfirmStockReservationJob;
+use App\Infrastructure\Queue\Jobs\ReleaseStockReservationJob;
 
 final readonly class CreateOrderUseCase
 {
@@ -24,38 +26,68 @@ final readonly class CreateOrderUseCase
         private ProductRepositoryInterface $productRepository,
         private TransactionManagerInterface $transactionManager,
         private ProcessPaymentUseCase $processPaymentUseCase,
-        private PaymentRepositoryInterface $paymentRepository,
+        private StockReservationRepositoryInterface $stockReservationRepository,
     ) {
     }
 
     public function execute(CreateOrderCommand $command): OrderData
     {
-        return $this->transactionManager->transaction(function () use ($command) {
-            // 1. Get product with lock (race condition protection)
-            $product = $this->productRepository->findByIdWithLock($command->productId);
+        // Optimistic locking with retry (max 3 attempts)
+        $maxRetries = 3;
+        $retryDelay = 50000; // 50ms in microseconds
 
-            if (!$product) {
+        for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+            try {
+                return $this->attemptCreateOrder($command);
+            } catch (InsufficientStockException $e) {
+                // If last attempt, throw exception
+                if ($attempt === $maxRetries) {
+                    throw $e;
+                }
+                // Otherwise, wait and retry
+                usleep($retryDelay * $attempt); // Exponential backoff
+            }
+        }
+
+        throw InsufficientStockException::forProduct($command->quantity, 0);
+    }
+
+    private function attemptCreateOrder(CreateOrderCommand $command): OrderData
+    {
+        $result = $this->transactionManager->transaction(function () use ($command) {
+            $productEntity = $this->productRepository->findById($command->productId);
+
+            if (!$productEntity) {
                 throw ProductNotFoundException::withId($command->productId);
             }
 
-            // 2. Validate stock
-            if ($product['stock'] < $command->quantity) {
+            $product = [
+                'id' => $productEntity->id,
+                'name' => $productEntity->name,
+                'price' => $productEntity->price,
+                'stock' => $productEntity->stock,
+            ];
+
+            // 2. Calculate amounts (Domain logic)
+            $lineTotal = LineTotal::calculate($product['price'], $command->quantity);
+
+            // 3. Generate order number (Domain logic)
+            $orderNumber = OrderNumber::generate();
+
+            // 4. Optimistically decrement stock (atomic operation)
+            $stockDecremented = $this->productRepository->decrementStockOptimistic(
+                $product['id'],
+                $command->quantity
+            );
+
+            if (!$stockDecremented) {
                 throw InsufficientStockException::forProduct(
                     $command->quantity,
-                    $product['stock']
+                    0
                 );
             }
 
-            // 3. Calculate amounts (Domain logic)
-            $lineTotal = LineTotal::calculate($product['price'], $command->quantity);
-
-            // 4. Decrement stock (via repository - atomic)
-            $this->productRepository->decrementStock($command->productId, $command->quantity);
-
-            // 5. Generate order number (Domain logic)
-            $orderNumber = OrderNumber::generate();
-
-            // 6. Create order (status: PENDING - will be updated after payment)
+            // 5. Create order (status: PENDING)
             $orderId = $this->orderRepository->create([
                 'user_id' => $command->userId,
                 'order_number' => $orderNumber->value,
@@ -64,23 +96,14 @@ final readonly class CreateOrderUseCase
                 'total_amount' => $lineTotal->total,
             ]);
 
-            // 7. Get attempt number for this order
-            $attemptNumber = $this->paymentRepository->getNextAttemptNumber($orderId);
-
-            // 8. Process payment (via ProcessPaymentUseCase - Composition)
-            $paymentResult = $this->processPaymentUseCase->execute(
-                new ProcessPaymentCommand(
-                    orderId: $orderId,
-                    amount: $lineTotal->total,
-                    method: $command->paymentMethod,
-                    attemptNumber: $attemptNumber,
-                    metadata: [
-                        'user_id' => $command->userId,
-                    ]
-                )
+            // 6. Create stock reservation (for tracking purposes)
+            $this->stockReservationRepository->create(
+                orderId: $orderId,
+                productId: $product['id'],
+                quantity: $command->quantity
             );
 
-            // 9. Create order items (before payment check)
+            // 7. Create order items
             $this->orderRepository->createOrderItems($orderId, [
                 [
                     'product_id' => $product['id'],
@@ -91,7 +114,20 @@ final readonly class CreateOrderUseCase
                 ],
             ]);
 
-            // 10. Update order based on payment result
+            // 8. Process payment
+            $paymentResult = $this->processPaymentUseCase->execute(
+                new ProcessPaymentCommand(
+                    orderId: $orderId,
+                    amount: $lineTotal->total,
+                    method: $command->paymentMethod,
+                    metadata: [
+                        'user_id' => $command->userId,
+                        'product_id' => $product['id'],
+                    ]
+                )
+            );
+
+            // 9. Update order based on payment result
             if ($paymentResult->success) {
                 $this->orderRepository->update($orderId, [
                     'status' => OrderStatus::COMPLETED->value,
@@ -104,9 +140,25 @@ final readonly class CreateOrderUseCase
                 ]);
             }
 
-            // 11. Return order data
+            // 10. Return data for async stock confirmation/release
             $orderData = $this->orderRepository->findById($orderId);
-            return OrderData::fromArray($orderData);
+            return [
+                'orderData' => OrderData::fromArray($orderData),
+                'paymentSuccess' => $paymentResult->success,
+            ];
         });
+
+        // 11. After transaction commit: Confirm or Release reservation based on payment result
+        if ($result['paymentSuccess']) {
+            ConfirmStockReservationJob::dispatch(
+                orderId: $result['orderData']->id
+            )->onQueue('stock');
+        } else {
+            ReleaseStockReservationJob::dispatch(
+                orderId: $result['orderData']->id
+            )->onQueue('stock');
+        }
+
+        return $result['orderData'];
     }
 }

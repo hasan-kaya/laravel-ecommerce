@@ -45,7 +45,6 @@ final readonly class EloquentPaymentRepository implements PaymentRepositoryInter
             'status' => $payment->status,
             'transaction_id' => $payment->transaction_id,
             'error_message' => $payment->error_message,
-            'attempt_number' => $payment->attempt_number,
             'processed_at' => $payment->processed_at?->toIso8601String(),
             'created_at' => $payment->created_at->toIso8601String(),
         ];
@@ -54,7 +53,7 @@ final readonly class EloquentPaymentRepository implements PaymentRepositoryInter
     public function findByOrderId(int $orderId): array
     {
         return Payment::where('order_id', $orderId)
-            ->orderBy('attempt_number', 'asc')
+            ->orderBy('created_at', 'asc')
             ->get()
             ->map(fn($payment) => [
                 'id' => $payment->id,
@@ -63,18 +62,30 @@ final readonly class EloquentPaymentRepository implements PaymentRepositoryInter
                 'status' => $payment->status,
                 'transaction_id' => $payment->transaction_id,
                 'error_message' => $payment->error_message,
-                'attempt_number' => $payment->attempt_number,
                 'processed_at' => $payment->processed_at?->toIso8601String(),
                 'created_at' => $payment->created_at->toIso8601String(),
             ])
             ->toArray();
     }
 
-    public function getNextAttemptNumber(int $orderId): int
+    public function findByIdempotencyKey(string $idempotencyKey): ?array
     {
-        $maxAttempt = Payment::where('order_id', $orderId)
-            ->max('attempt_number');
+        $payment = Payment::where('idempotency_key', $idempotencyKey)->first();
 
-        return ($maxAttempt ?? 0) + 1;
+        if (!$payment) {
+            return null;
+        }
+
+        return [
+            'id' => $payment->id,
+            'order_id' => $payment->order_id,
+            'payment_method' => $payment->payment_method,
+            'amount' => (float) $payment->amount,
+            'status' => $payment->status,
+            'transaction_id' => $payment->transaction_id,
+            'error_message' => $payment->error_message,
+            'processed_at' => $payment->processed_at?->toIso8601String(),
+            'created_at' => $payment->created_at->toIso8601String(),
+        ];
     }
 }

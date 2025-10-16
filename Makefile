@@ -1,9 +1,6 @@
 .PHONY: setup
 
 setup:
-	@echo "Eski container ve volume’ler temizleniyor."
-	docker-compose down --rmi all --volumes --remove-orphans
-
 	@echo "Laravel bağımlılıkları kuruluyor."
 	docker-compose run --rm app composer install
 
