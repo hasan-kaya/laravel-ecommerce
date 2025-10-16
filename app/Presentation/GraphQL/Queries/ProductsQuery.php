@@ -6,11 +6,15 @@ namespace App\Presentation\GraphQL\Queries;
 
 use App\Application\Product\SearchProducts\SearchProductsUseCase;
 use App\Domain\Shared\Exceptions\DomainException;
+use App\Presentation\GraphQL\Concerns\ExtractsRequestedFields;
 use App\Presentation\GraphQL\Mappers\ProductMapper;
 use GraphQL\Error\Error;
+use GraphQL\Type\Definition\ResolveInfo;
 
 final readonly class ProductsQuery
 {
+    use ExtractsRequestedFields;
+
     public function __construct(
         private SearchProductsUseCase $searchProductsUseCase,
     ) {
@@ -20,7 +24,7 @@ final readonly class ProductsQuery
      * @param array<string, mixed> $args
      * @return array<int, array<string, mixed>>
      */
-    public function __invoke($root, array $args): array
+    public function __invoke($root, array $args, $context, ResolveInfo $resolveInfo): array
     {
         try {
             $filter = $args['filter'] ?? [];

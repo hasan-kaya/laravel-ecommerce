@@ -8,6 +8,7 @@ use App\Domain\Product\Entity\Product as DomainProduct;
 use App\Domain\Product\Repository\ProductRepositoryInterface;
 use App\Domain\Product\Repository\StockReservationRepositoryInterface;
 use App\Domain\Shared\Search\SearchEngineInterface;
+use App\Infrastructure\Concerns\SelectsSpecificFields;
 use App\Infrastructure\Eloquent\Product as EloquentProduct;
 use DateTimeImmutable;
 use Illuminate\Support\Facades\DB;
@@ -15,14 +16,21 @@ use Illuminate\Support\Facades\Log;
 
 final readonly class EloquentProductRepository implements ProductRepositoryInterface
 {
+    use SelectsSpecificFields;
     public function __construct(
         private StockReservationRepositoryInterface $stockReservationRepository,
         private SearchEngineInterface $elasticsearchClient,
     ) {
     }
-    public function findById(int $id): ?DomainProduct
+    /**
+     * @param array<string> $fields
+     */
+    public function findById(int $id, array $fields = []): ?DomainProduct
     {
-        $product = EloquentProduct::find($id);
+        $query = EloquentProduct::query();
+        $query = $this->applyFieldSelection($query, $fields);
+        
+        $product = $query->find($id);
 
         return $product ? $this->toDomain($product) : null;
     }
@@ -162,7 +170,7 @@ final readonly class EloquentProductRepository implements ProductRepositoryInter
         int $offset = 0
     ): array {
         $startTime = microtime(true);
-        
+
         // Build Elasticsearch query
         $elasticQuery = $this->buildElasticsearchQuery(
             $query,
@@ -293,12 +301,12 @@ final readonly class EloquentProductRepository implements ProductRepositoryInter
     {
         return new DomainProduct(
             id: $eloquentProduct->id,
-            name: $eloquentProduct->name,
-            description: $eloquentProduct->description,
-            category: $eloquentProduct->category,
-            brand: $eloquentProduct->brand,
-            price: (float) $eloquentProduct->price,
-            stock: $eloquentProduct->stock,
+            name: $eloquentProduct->name ?? '',
+            description: $eloquentProduct->description ?? null,
+            category: $eloquentProduct->category ?? '',
+            brand: $eloquentProduct->brand ?? '',
+            price: isset($eloquentProduct->price) ? (float) $eloquentProduct->price : 0.0,
+            stock: $eloquentProduct->stock ?? 0,
             createdAt: $eloquentProduct->created_at
                 ? DateTimeImmutable::createFromMutable($eloquentProduct->created_at)
                 : null,
@@ -323,4 +331,5 @@ final readonly class EloquentProductRepository implements ProductRepositoryInter
             ]
         );
     }
+
 }

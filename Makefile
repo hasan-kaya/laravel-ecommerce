@@ -4,8 +4,11 @@ setup:
 	@echo "Laravel bağımlılıkları kuruluyor."
 	docker-compose run --rm app composer install
 
-	@echo "Container’lar başlatılıyor."
+	@echo "Container'lar başlatılıyor."
 	docker-compose up -d
+
+	@echo "Application key oluşturuluyor..."
+	docker-compose exec app php artisan key:generate
 
 	@echo "Veritabanı migrate ediliyor."
 	docker-compose exec app php artisan migrate

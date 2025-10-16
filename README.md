@@ -1,61 +1,315 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# E-Commerce Platform
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+> E-commerce application built with Laravel, GraphQL and Clean Architecture.
 
-## About Laravel
+## 📋 Table of Contents
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
+- [Database Schema](#database-schema)
+- [Elasticsearch Integration](#elasticsearch-integration)
+- [Quick Start](#quick-start)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 🏗️ Architecture
 
-## Learning Laravel
+### Clean Architecture
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+**Principle:** Clear separation of Domain, Application, and Infrastructure layers with strict dependency rules.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+```
+┌─────────────────────────────────────────────┐
+│  Presentation Layer (GraphQL)               │
+│  • Queries, Mutations, Resolvers            │
+└──────────────────┬──────────────────────────┘
+                   │
+┌──────────────────▼──────────────────────────┐
+│  Application Layer (Use Cases)              │
+│  • Business workflows                       │
+│  • Input/Output DTOs                        │
+└──────────────────┬──────────────────────────┘
+                   │
+┌──────────────────▼──────────────────────────┐
+│  Domain Layer (Business Logic)              │
+│  • Entities, Value Objects                  │
+│  • Repository Interfaces                    │
+│  • Domain Events                            │
+└──────────────────▲──────────────────────────┘
+                   │
+┌──────────────────┴──────────────────────────┐
+│  Infrastructure Layer                       │
+│  • Database (PostgreSQL)                    │
+│  • Search (Elasticsearch)                   │
+│  • Queue (Redis)                            │
+│  • Cache (Redis)                            │
+│  • Payment                                  │
+└─────────────────────────────────────────────┘
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Project Structure
 
-## Laravel Sponsors
+```
+app/
+├── Application/          # Use Cases (Feature-based)
+│   ├── Auth/
+│   ├── Order/
+│   ├── Product/
+│   └── User/
+├── Domain/              # Core Business Logic
+│   ├── Auth/
+│   ├── Order/
+│   ├── Product/
+│   ├── User/
+│   └── Shared/
+├── Infrastructure/      # External Services
+│   ├── Database/
+│   ├── Search/
+│   ├── Payment/
+│   └── Providers/
+└── Presentation/        # GraphQL Layer
+    └── GraphQL/
+        ├── Queries/
+        └── Mutations/
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+---
 
-### Premium Partners
+## 🛠️ Tech Stack
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### Backend
+- **PHP 8.4** - Modern PHP with strict typing
+- **Laravel 12** - Framework
+- **PostgreSQL 15** - Primary database
+- **Elasticsearch 9** - Search engine
+- **Redis 7** - Cache & Queue
 
-## Contributing
+### API
+- **GraphQL** - Laravel Lighthouse
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Authentication
+- **OAuth2** - Laravel Passport
 
-## Code of Conduct
+### Infrastructure
+- **Docker** - Container orchestration
+- **Nginx** - Reverse proxy & web server
+- **PHP-FPM** - PHP process manager
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+---
 
-## Security Vulnerabilities
+## 💾 Database Schema
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Core Tables
 
-## License
+#### Users & Authentication
+```sql
+users                # User accounts
+├── id
+├── name
+├── email
+├── password
+└── created_at
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+addresses            # Shipping/Billing addresses
+├── id
+├── user_id          → users.id
+├── type             (shipping/billing)
+├── address_line_1
+├── city
+├── country
+└── postal_code
+```
+
+#### Products & Inventory
+```sql
+products             # Product catalog
+├── id
+├── name
+├── description
+├── category
+├── brand
+├── price
+├── stock
+└── created_at
+
+stock_reservations   # Inventory management
+├── id
+├── product_id       → products.id
+├── order_id         → orders.id
+├── quantity
+├── status           (pending/confirmed/cancelled)
+└── expires_at
+```
+
+#### Orders & Payments
+```sql
+orders               # Customer orders
+├── id
+├── user_id          → users.id
+├── order_number     (unique)
+├── status           (pending/processing/completed/cancelled)
+├── payment_status   (pending/paid/failed/refunded)
+├── total_amount
+└── created_at
+
+order_items          # Order line items
+├── id
+├── order_id         → orders.id
+├── product_id       → products.id
+├── quantity
+├── price            (snapshot at order time)
+└── line_total       (price × quantity)
+
+payments             # Payment transactions
+├── id
+├── order_id         → orders.id
+├── payment_method   (credit_card/iyzico/etc)
+├── amount
+├── status
+├── transaction_id
+└── created_at
+```
+
+---
+
+## 🔍 Elasticsearch Integration
+
+### Product Search Engine
+
+**Purpose:** Fast full-text search with advanced filtering
+
+**Features:**
+- ✅ **Full-text search** - Search in product name and description
+- ✅ **Turkish language support** - Turkish stopwords filtering
+- ✅ **Multi-field search** - Name (boosted 3x) + Description
+- ✅ **Advanced filters** - Category, brand, price range, stock status
+- ✅ **Real-time sync** - Auto-indexing on product CRUD operations
+- ✅ **Bulk indexing** - Fast initial indexing (500 products in ~100ms)
+
+### Index Mapping
+
+```json
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "turkish": {
+          "type": "standard",
+          "stopwords": "_turkish_"
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "name": { "type": "text", "analyzer": "turkish" },
+      "description": { "type": "text", "analyzer": "turkish" },
+      "category": { "type": "keyword" },
+      "brand": { "type": "keyword" },
+      "price": { "type": "float" },
+      "stock": { "type": "integer" }
+    }
+  }
+}
+```
+
+### Synchronization Strategy
+
+#### Automatic Sync (Real-time)
+
+Product CRUD operations automatically update Elasticsearch:
+
+```php
+// Product created → Index document
+$this->elasticsearchClient->indexDocument($product->id, $data);
+
+// Product updated → Re-index document
+$this->elasticsearchClient->indexDocument($product->id, $data);
+
+// Product deleted → Delete document
+$this->elasticsearchClient->deleteDocument($product->id);
+```
+
+#### Manual Sync (Bulk)
+
+```bash
+# Full reindex (recreate index + index all products)
+make elasticsearch-index
+
+# Or manually:
+docker-compose exec app php artisan elasticsearch:index --recreate
+
+# Reindex without recreating
+docker-compose exec app php artisan elasticsearch:index
+```
+
+### Search Query Example
+
+```graphql
+query {
+  products(
+    filter: {
+      query: "laptop"           # Full-text: name^3, description
+      category: "Electronics"   # Exact match
+      brand: "Apple"            # Exact match
+      minPrice: 500             # Range: gte
+      maxPrice: 2000            # Range: lte
+      inStock: true             # Range: stock > 0
+    }
+    limit: 20
+    offset: 0
+  ) {
+    id
+    name
+    price
+    stock
+  }
+}
+```
+
+### Commands
+
+```bash
+# Start Elasticsearch
+docker-compose up -d elasticsearch
+
+# Create index and index products
+make elasticsearch-index
+
+# Check Elasticsearch status
+curl http://localhost:9200
+
+# Check product index
+curl http://localhost:9200/products/_search?pretty
+
+# Reindex products
+docker-compose exec app php artisan elasticsearch:index --recreate
+```
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Docker & Docker Compose
+- Make (optional)
+
+### Installation
+
+```bash
+# 1. Clone repository
+git clone <repository-url>
+cd ecommerce
+
+# 2. Copy environment file
+cp .env.example .env
+
+# 3. Run setup (all-in-one)
+make setup
+```
+
+---
+
+## 📝 License
+
+MIT License

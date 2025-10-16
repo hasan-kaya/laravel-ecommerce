@@ -8,7 +8,10 @@ use App\Domain\Product\Entity\Product;
 
 interface ProductRepositoryInterface
 {
-    public function findById(int $id): ?Product;
+    /**
+     * @param array<string> $fields
+     */
+    public function findById(int $id, array $fields = []): ?Product;
 
     public function create(
         string $name,

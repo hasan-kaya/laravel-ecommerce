@@ -15,9 +15,12 @@ final readonly class GetProductUseCase
     ) {
     }
 
-    public function execute(int $id): ProductData
+    /**
+     * @param array<string> $fields
+     */
+    public function execute(int $id, array $fields = []): ProductData
     {
-        $product = $this->productRepository->findById($id);
+        $product = $this->productRepository->findById($id, $fields);
         
         if ($product === null) {
             throw ProductNotFoundException::withId($id);
