@@ -4,6 +4,7 @@ namespace App\Infrastructure\Providers;
 
 use App\Domain\Address\Repository\AddressRepositoryInterface;
 use App\Domain\Auth\TokenServiceInterface;
+use App\Domain\Order\Contract\StockReservationJobDispatcherInterface;
 use App\Domain\Order\Repository\OrderRepositoryInterface;
 use App\Domain\Payment\Enums\PaymentMethod;
 use App\Domain\Payment\Repository\PaymentRepositoryInterface;
@@ -16,6 +17,7 @@ use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Address\Repository\EloquentAddressRepository;
 use App\Infrastructure\Auth\PassportTokenService;
 use App\Infrastructure\Database\DatabaseTransactionManager;
+use App\Infrastructure\Order\Jobs\StockReservationJobDispatcher;
 use App\Infrastructure\Order\Repository\EloquentOrderRepository;
 use App\Infrastructure\Payment\IyzicoPaymentService;
 use App\Infrastructure\Payment\PaymentServiceFactory;
@@ -42,6 +44,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(OrderRepositoryInterface::class, EloquentOrderRepository::class);
         $this->app->singleton(PaymentRepositoryInterface::class, EloquentPaymentRepository::class);
         $this->app->singleton(TransactionManagerInterface::class, DatabaseTransactionManager::class);
+        $this->app->singleton(StockReservationJobDispatcherInterface::class, StockReservationJobDispatcher::class);
 
         // Search Engine (Dependency Inversion Principle)
         $this->app->singleton(SearchEngineInterface::class, ElasticsearchClient::class);

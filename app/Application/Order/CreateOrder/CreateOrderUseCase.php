@@ -6,6 +6,7 @@ namespace App\Application\Order\CreateOrder;
 
 use App\Application\Payment\ProcessPayment\ProcessPaymentCommand;
 use App\Application\Payment\ProcessPayment\ProcessPaymentUseCase;
+use App\Domain\Order\Contract\StockReservationJobDispatcherInterface;
 use App\Domain\Order\Enums\OrderStatus;
 use App\Domain\Order\Enums\PaymentStatus;
 use App\Domain\Order\Repository\OrderRepositoryInterface;
@@ -16,8 +17,6 @@ use App\Domain\Shared\Exceptions\InsufficientStockException;
 use App\Domain\Shared\Exceptions\ProductNotFoundException;
 use App\Domain\Shared\TransactionManagerInterface;
 use App\Domain\Product\Repository\StockReservationRepositoryInterface;
-use App\Infrastructure\Queue\Jobs\ConfirmStockReservationJob;
-use App\Infrastructure\Queue\Jobs\ReleaseStockReservationJob;
 
 final readonly class CreateOrderUseCase
 {
@@ -27,6 +26,7 @@ final readonly class CreateOrderUseCase
         private TransactionManagerInterface $transactionManager,
         private ProcessPaymentUseCase $processPaymentUseCase,
         private StockReservationRepositoryInterface $stockReservationRepository,
+        private StockReservationJobDispatcherInterface $jobDispatcher,
     ) {
     }
 
@@ -147,13 +147,9 @@ final readonly class CreateOrderUseCase
 
         // STEP 5: Dispatch async job for stock reservation (Saga compensation)
         if ($paymentResult->success) {
-            ConfirmStockReservationJob::dispatch(
-                orderId: $result['orderId']
-            )->onQueue('stock');
+            $this->jobDispatcher->dispatchConfirmReservation($result['orderId']);
         } else {
-            ReleaseStockReservationJob::dispatch(
-                orderId: $result['orderId']
-            )->onQueue('stock');
+            $this->jobDispatcher->dispatchReleaseReservation($result['orderId']);
         }
 
         return OrderData::fromArray($orderData);
