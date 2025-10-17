@@ -29,7 +29,7 @@ final readonly class EloquentProductRepository implements ProductRepositoryInter
     {
         $query = EloquentProduct::query();
         $query = $this->applyFieldSelection($query, $fields);
-        
+
         $product = $query->find($id);
 
         return $product ? $this->toDomain($product) : null;
@@ -206,13 +206,6 @@ final readonly class EloquentProductRepository implements ProductRepositoryInter
             );
         }, $results);
 
-        $totalTime = (microtime(true) - $startTime) * 1000;
-        Log::info("Search timing (optimized)", [
-            'elasticsearch' => round($elasticTime, 2) . 'ms',
-            'total' => round($totalTime, 2) . 'ms',
-            'results' => count($results),
-        ]);
-
         return $products;
     }
 
@@ -327,7 +320,6 @@ final readonly class EloquentProductRepository implements ProductRepositoryInter
                 'brand' => $product->brand,
                 'price' => (float)$product->price,
                 'stock' => $product->stock,
-                'created_at' => $product->created_at?->toIso8601String(),
             ]
         );
     }

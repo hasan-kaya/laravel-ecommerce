@@ -45,7 +45,6 @@ class ElasticsearchIndexCommand extends Command
                     'brand' => $product->brand,
                     'price' => (float)$product->price,
                     'stock' => $product->stock,
-                    'created_at' => $product->created_at?->toIso8601String(),
                 ];
             }
 

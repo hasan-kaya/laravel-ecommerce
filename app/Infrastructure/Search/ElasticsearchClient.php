@@ -129,9 +129,6 @@ class ElasticsearchClient implements SearchEngineInterface
                             'stock' => [
                                 'type' => 'integer',
                             ],
-                            'created_at' => [
-                                'type' => 'date',
-                            ],
                         ],
                     ],
                 ],
