@@ -13,7 +13,7 @@
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ### Clean Architecture
 
@@ -76,7 +76,7 @@ app/
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Backend
 - **PHP 8.4** - Modern PHP with strict typing
@@ -98,7 +98,7 @@ app/
 
 ---
 
-## 💾 Database Schema
+## Database Schema
 
 ### Core Tables
 
@@ -173,7 +173,7 @@ payments             # Payment transactions
 
 ---
 
-## 🔍 Elasticsearch Integration
+## Elasticsearch Integration
 
 ### Product Search Engine
 
@@ -289,7 +289,7 @@ docker-compose exec app php artisan elasticsearch:index --recreate
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Docker & Docker Compose
@@ -342,7 +342,7 @@ make elasticsearch-reindex   # Reindex products
 
 ---
 
-## 💾 Backup & Disaster Recovery
+## Backup & Disaster Recovery
 
 ### Backup & Restore
 
