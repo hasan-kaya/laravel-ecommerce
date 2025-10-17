@@ -12,15 +12,38 @@ final class EloquentStockReservationRepository implements StockReservationReposi
 {
     public function create(int $orderId, int $productId, int $quantity): int
     {
-        return DB::table('stock_reservations')->insertGetId([
-            'order_id' => $orderId,
-            'product_id' => $productId,
-            'quantity' => $quantity,
-            'status' => ReservationStatus::PENDING->value,
-            'expires_at' => now()->addMinutes(10), // 10 minutes expiration
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        return DB::transaction(function () use ($orderId, $productId, $quantity) {
+            // Lock product row for atomic stock check
+            $product = DB::table('products')
+                ->where('id', $productId)
+                ->lockForUpdate()
+                ->first(['stock']);
+
+            if (!$product) {
+                throw new \RuntimeException("Product not found: {$productId}");
+            }
+
+            // Get reserved quantity with lock
+            $reservedQuantity = $this->getTotalReservedQuantity($productId);
+            $availableStock = $product->stock - $reservedQuantity;
+
+            if ($availableStock < $quantity) {
+                throw new \RuntimeException(
+                    "Insufficient stock. Available: {$availableStock}, Requested: {$quantity}"
+                );
+            }
+
+            // Create reservation atomically
+            return DB::table('stock_reservations')->insertGetId([
+                'order_id' => $orderId,
+                'product_id' => $productId,
+                'quantity' => $quantity,
+                'status' => ReservationStatus::PENDING->value,
+                'expires_at' => now()->addMinutes(10), // 10 minutes expiration
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        });
     }
 
     public function findByOrderId(int $orderId): ?array

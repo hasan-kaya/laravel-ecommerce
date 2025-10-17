@@ -39,9 +39,12 @@ final readonly class CreateOrderUseCase
         for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
             try {
                 return $this->attemptCreateOrder($command);
-            } catch (InsufficientStockException $e) {
+            } catch (InsufficientStockException | \RuntimeException $e) {
                 // If last attempt, throw exception
                 if ($attempt === $maxRetries) {
+                    if ($e instanceof \RuntimeException) {
+                        throw InsufficientStockException::forProduct($command->quantity, 0);
+                    }
                     throw $e;
                 }
                 // Otherwise, wait and retry
@@ -54,6 +57,7 @@ final readonly class CreateOrderUseCase
 
     private function attemptCreateOrder(CreateOrderCommand $command): OrderData
     {
+        // STEP 1: Create order in transaction (fast DB operations only)
         $result = $this->transactionManager->transaction(function () use ($command) {
             $productEntity = $this->productRepository->findById($command->productId);
 
@@ -74,20 +78,7 @@ final readonly class CreateOrderUseCase
             // 3. Generate order number (Domain logic)
             $orderNumber = OrderNumber::generate();
 
-            // 4. Optimistically decrement stock (atomic operation)
-            $stockDecremented = $this->productRepository->decrementStockOptimistic(
-                $product['id'],
-                $command->quantity
-            );
-
-            if (!$stockDecremented) {
-                throw InsufficientStockException::forProduct(
-                    $command->quantity,
-                    0
-                );
-            }
-
-            // 5. Create order (status: PENDING)
+            // 4. Create order (status: PENDING - Two-Phase Commit)
             $orderId = $this->orderRepository->create([
                 'user_id' => $command->userId,
                 'order_number' => $orderNumber->value,
@@ -96,14 +87,15 @@ final readonly class CreateOrderUseCase
                 'total_amount' => $lineTotal->total,
             ]);
 
-            // 6. Create stock reservation (for tracking purposes)
+            // 5. Create stock reservation (atomic check + lock)
+            // This will throw RuntimeException if insufficient stock
             $this->stockReservationRepository->create(
                 orderId: $orderId,
                 productId: $product['id'],
                 quantity: $command->quantity
             );
 
-            // 7. Create order items
+            // 6. Create order items
             $this->orderRepository->createOrderItems($orderId, [
                 [
                     'product_id' => $product['id'],
@@ -114,51 +106,56 @@ final readonly class CreateOrderUseCase
                 ],
             ]);
 
-            // 8. Process payment
-            $paymentResult = $this->processPaymentUseCase->execute(
-                new ProcessPaymentCommand(
-                    orderId: $orderId,
-                    amount: $lineTotal->total,
-                    method: $command->paymentMethod,
-                    metadata: [
-                        'user_id' => $command->userId,
-                        'product_id' => $product['id'],
-                    ]
-                )
-            );
+            // Return order data for payment processing
+            return [
+                'orderId' => $orderId,
+                'lineTotal' => $lineTotal,
+                'productId' => $product['id'],
+            ];
+        });
 
-            // 9. Update order based on payment result
+        // STEP 2: Process payment OUTSIDE transaction
+        $paymentResult = $this->processPaymentUseCase->execute(
+            new ProcessPaymentCommand(
+                orderId: $result['orderId'],
+                amount: $result['lineTotal']->total,
+                method: $command->paymentMethod,
+                metadata: [
+                    'user_id' => $command->userId,
+                    'product_id' => $result['productId'],
+                ]
+            )
+        );
+
+        // STEP 3: Update order based on payment result (separate transaction)
+        $this->transactionManager->transaction(function () use ($result, $paymentResult) {
             if ($paymentResult->success) {
-                $this->orderRepository->update($orderId, [
+                $this->orderRepository->update($result['orderId'], [
                     'status' => OrderStatus::COMPLETED->value,
                     'payment_status' => PaymentStatus::PAID->value,
                 ]);
             } else {
-                $this->orderRepository->update($orderId, [
+                $this->orderRepository->update($result['orderId'], [
                     'status' => OrderStatus::FAILED->value,
                     'payment_status' => PaymentStatus::FAILED->value,
                 ]);
             }
-
-            // 10. Return data for async stock confirmation/release
-            $orderData = $this->orderRepository->findById($orderId);
-            return [
-                'orderData' => OrderData::fromArray($orderData),
-                'paymentSuccess' => $paymentResult->success,
-            ];
         });
 
-        // 11. After transaction commit: Confirm or Release reservation based on payment result
-        if ($result['paymentSuccess']) {
+        // STEP 4: Get final order data
+        $orderData = $this->orderRepository->findById($result['orderId']);
+
+        // STEP 5: Dispatch async job for stock reservation (Saga compensation)
+        if ($paymentResult->success) {
             ConfirmStockReservationJob::dispatch(
-                orderId: $result['orderData']->id
+                orderId: $result['orderId']
             )->onQueue('stock');
         } else {
             ReleaseStockReservationJob::dispatch(
-                orderId: $result['orderData']->id
+                orderId: $result['orderId']
             )->onQueue('stock');
         }
 
-        return $result['orderData'];
+        return OrderData::fromArray($orderData);
     }
 }

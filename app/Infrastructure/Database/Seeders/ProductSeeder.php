@@ -44,7 +44,7 @@ class ProductSeeder extends Seeder
                 'category' => $category,
                 'brand' => $brand,
                 'price' => fake()->randomFloat(2, 99, 99999),
-                'stock' => 10000,
+                'stock' => 1000,
             ]);
         }
 
