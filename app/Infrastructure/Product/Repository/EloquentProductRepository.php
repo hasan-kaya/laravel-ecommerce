@@ -107,28 +107,6 @@ final readonly class EloquentProductRepository implements ProductRepositoryInter
         return $this->toDomain($eloquentProduct->fresh());
     }
 
-    public function findByIdWithLock(int $id): ?array
-    {
-        return DB::transaction(function () use ($id) {
-            $product = EloquentProduct::where('id', $id)
-                ->lockForUpdate()
-                ->first();
-
-            if (!$product) {
-                return null;
-            }
-
-            return [
-                'id' => $product->id,
-                'name' => $product->name,
-                'description' => $product->description,
-                'category' => $product->category,
-                'brand' => $product->brand,
-                'price' => (float) $product->price,
-                'stock' => $product->stock,
-            ];
-        });
-    }
 
     public function getAvailableStock(int $productId): int
     {
